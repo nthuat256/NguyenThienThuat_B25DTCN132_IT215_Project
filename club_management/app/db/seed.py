@@ -2,16 +2,18 @@ from app.db.database import SessionLocal
 from app.models.club import Club
 from app.models.activity import ClubActivity
 from app.models.user import User
+from app.core.security import get_password_hash 
 
-def get_or_create(db, model, filter_by: dict,):
+def get_or_create(db, model, filter_by: dict, **kwargs):
     instance = db.query(model).filter_by(**filter_by).first()
     if not instance:
-        instance = model(**filter_by)
+        create_data = {**filter_by, **kwargs}
+        instance = model(**create_data)
+        
         db.add(instance)
         db.commit()
         db.refresh(instance)
     return instance
-
 
 def seed_data():
     with SessionLocal() as db:
@@ -19,7 +21,8 @@ def seed_data():
             db,
             User,
             {"email": "admin@gmail.com"},
-            password_hash="demo_password",
+ 
+            password_hash=get_password_hash("demo_password"), 
             full_name="Admin",
             role="ADMIN",
         )
@@ -41,6 +44,8 @@ def seed_data():
             status="TODO",
             priority="HIGH",
         )
+        
+        print("Đã seed dữ liệu thành công!")
 
 
 if __name__ == "__main__":

@@ -4,5 +4,6 @@ sqlalchemy
 pymysql
 python-dotenv
 passlib[bcrypt]
+PyJWT
 python-jose[cryptography]
 email-validator
