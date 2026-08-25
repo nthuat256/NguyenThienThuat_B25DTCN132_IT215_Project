@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-load_dotenv()
+load_dotenv(".env.example")
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./club_management.db")
 SECRET_KEY = os.getenv("SECRET_KEY", "secret-key")

@@ -1,5 +1,5 @@
 from fastapi import Depends
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import APIKeyHeader
 from sqlalchemy.orm import Session
 
 from app.core.exception import (
@@ -11,13 +11,16 @@ from app.core.security import decode_access_token
 from app.db.database import get_db
 from app.models.user import User
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
-
+token_scheme = APIKeyHeader(name="Authorization")
 
 def get_current_user(
-    token: str = Depends(oauth2_scheme),
+    token: str = Depends(token_scheme),
     db: Session = Depends(get_db),
 ) -> User:
+
+    if token.startswith("Bearer "):
+        token = token.split(" ")[1]
+
     payload = decode_access_token(token)
     if not payload or payload.get("type") != "access" or not payload.get("sub"):
         raise InvalidTokenException()

@@ -16,3 +16,4 @@ class User(Base):
     clubs_owned = relationship("Club", back_populates="owner")
     memberships = relationship("ClubMember", back_populates="user")
     activities_assigned = relationship("ClubActivity", back_populates="assignee")
+    logs = relationship("ClubLog", back_populates="user")

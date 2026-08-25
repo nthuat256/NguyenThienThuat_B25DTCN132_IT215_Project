@@ -1,6 +1,5 @@
 from fastapi import FastAPI
 from app.db.database import Base, engine
-from app.models import activity, club, user
 from app.core.exception import http_exception_handler
 from app.routers import activity as activity_router
 from app.routers import auth, club as club_router, users

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
-
+from app.core.exception import AdminRequiredException
 from app.core.exception import (
     AccountLockedException,
     EmailAlreadyRegisteredException,
@@ -27,7 +27,6 @@ from app.schemas.user import (
 )
 
 router = APIRouter(prefix='/auth', tags=['auth'])
-
 
 @router.post('/register', response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 def register(user_data: UserCreate, db: Session = Depends(get_db)):
@@ -73,6 +72,9 @@ def refresh_access_token(payload: RefreshRequest, db: Session = Depends(get_db))
     user = db.query(User).filter(User.id == user_id).first()
     if not user or not user.is_active:
         raise InvalidRefreshTokenException()
-
+    
+    if user.role != "ADMIN":
+        raise AdminRequiredException()
+    
     new_access_token = create_access_token({'sub': str(user.id)})
     return AccessTokenResponse(access_token=new_access_token)
