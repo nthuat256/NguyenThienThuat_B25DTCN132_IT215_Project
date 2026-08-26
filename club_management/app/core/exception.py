@@ -85,6 +85,38 @@ class ClubOwnerRequiredException(HTTPException):
         )
 
 
+class ClubMemberRequiredException(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Bạn phải là thành viên của câu lạc bộ để thực hiện thao tác này",
+        )
+
+
+class ActivityPermissionException(HTTPException):
+    def __init__(self, action: str = "thực hiện thao tác này"):
+        super().__init__(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Bạn không có quyền {action} activity này",
+        )
+
+
+class ActivityAssigneeNotMemberException(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Assignee phải là thành viên của câu lạc bộ",
+        )
+
+
+class ActivityNotFoundException(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Không tìm thấy activity",
+        )
+
+
 class UserAlreadyMemberException(HTTPException):
     def __init__(self):
         super().__init__(
@@ -93,10 +125,7 @@ class UserAlreadyMemberException(HTTPException):
         )
 
 
-async def http_exception_handler(
-    request: Request,
-    exc: HTTPException
-):
+async def http_exception_handler(request: Request, exc: HTTPException):
     return JSONResponse(
         status_code=exc.status_code,
         content={

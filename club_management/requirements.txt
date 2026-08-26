@@ -5,6 +5,7 @@ pymysql
 python-dotenv
 passlib[bcrypt]
 PyJWT
-python-mulipart
-python-jose[cryptography]
+python-multipart
 email-validator
+pytest
+httpx

@@ -57,7 +57,6 @@ def login(login_data: LoginRequest, db: Session = Depends(get_db)):
     refresh_token = create_refresh_token({'sub': str(user.id)})
     return TokenResponse(access_token=access_token, refresh_token=refresh_token)
 
-
 @router.post('/refresh', response_model=AccessTokenResponse)
 def refresh_access_token(payload: RefreshRequest, db: Session = Depends(get_db)):
     data = decode_access_token(payload.refresh_token)
