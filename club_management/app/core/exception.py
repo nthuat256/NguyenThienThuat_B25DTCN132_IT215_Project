@@ -1,30 +1,22 @@
+from datetime import datetime, timezone
+
 from fastapi import HTTPException, Request, status
 from fastapi.responses import JSONResponse
 
 
 class EmailAlreadyRegisteredException(HTTPException):
     def __init__(self):
-        super().__init__(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Email đã được đăng ký",
-        )
+        super().__init__(status_code=status.HTTP_409_CONFLICT, detail="Email đã được đăng ký")
 
 
 class InvalidCredentialsException(HTTPException):
     def __init__(self):
-        super().__init__(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Email hoặc mật khẩu không chính xác",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        super().__init__(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Sai thông tin đăng nhập")
 
 
 class AccountLockedException(HTTPException):
     def __init__(self):
-        super().__init__(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Tài khoản đã bị khóa",
-        )
+        super().__init__(status_code=status.HTTP_403_FORBIDDEN, detail="Tài khoản đã bị khóa")
 
 
 class InvalidTokenException(HTTPException):
@@ -47,93 +39,63 @@ class InvalidRefreshTokenException(HTTPException):
 
 class AdminRequiredException(HTTPException):
     def __init__(self):
-        super().__init__(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Bạn cần có quyền quản trị viên để thực hiện thao tác này",
-        )
+        super().__init__(status_code=status.HTTP_403_FORBIDDEN, detail="Bạn cần có quyền quản trị viên để thực hiện thao tác này")
 
 
 class TooManyLoginAttemptsException(HTTPException):
     def __init__(self):
-        super().__init__(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="Bạn đã đăng nhập quá nhiều lần. Vui lòng thử lại sau",
-        )
+        super().__init__(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Bạn đã đăng nhập quá nhiều lần. Vui lòng thử lại sau")
 
 
 class UserNotFoundException(HTTPException):
     def __init__(self):
-        super().__init__(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Không tìm thấy người dùng",
-        )
+        super().__init__(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy người dùng")
 
 
 class ClubNotFoundException(HTTPException):
     def __init__(self):
-        super().__init__(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Không tìm thấy câu lạc bộ",
-        )
+        super().__init__(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy câu lạc bộ")
 
 
 class ClubOwnerRequiredException(HTTPException):
     def __init__(self, action: str = "thực hiện thao tác này"):
-        super().__init__(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Chỉ chủ câu lạc bộ mới được phép {action}",
-        )
+        super().__init__(status_code=status.HTTP_403_FORBIDDEN, detail=f"Chỉ chủ câu lạc bộ mới được phép {action}")
 
 
 class ClubMemberRequiredException(HTTPException):
     def __init__(self):
-        super().__init__(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Bạn phải là thành viên của câu lạc bộ để thực hiện thao tác này",
-        )
+        super().__init__(status_code=status.HTTP_403_FORBIDDEN, detail="Bạn phải là thành viên của câu lạc bộ để thực hiện thao tác này")
 
 
 class ActivityPermissionException(HTTPException):
     def __init__(self, action: str = "thực hiện thao tác này"):
-        super().__init__(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Bạn không có quyền {action} activity này",
-        )
+        super().__init__(status_code=status.HTTP_403_FORBIDDEN, detail=f"Bạn không có quyền {action} activity này")
 
 
 class ActivityAssigneeNotMemberException(HTTPException):
     def __init__(self):
-        super().__init__(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Assignee phải là thành viên của câu lạc bộ",
-        )
+        super().__init__(status_code=status.HTTP_400_BAD_REQUEST, detail="Assignee phải là thành viên của câu lạc bộ")
 
 
 class ActivityNotFoundException(HTTPException):
     def __init__(self):
-        super().__init__(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Không tìm thấy activity",
-        )
+        super().__init__(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy activity")
 
 
 class UserAlreadyMemberException(HTTPException):
     def __init__(self):
-        super().__init__(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Người dùng đã là thành viên của câu lạc bộ",
-        )
+        super().__init__(status_code=status.HTTP_400_BAD_REQUEST, detail="Người dùng đã là thành viên của câu lạc bộ")
 
 
 async def http_exception_handler(request: Request, exc: HTTPException):
-    return JSONResponse(
-        status_code=exc.status_code,
-        content={
-            "success": False,
-            "status_code": exc.status_code,
-            "error": "Lỗi yêu cầu",
-            "message": exc.detail,
-            "method": request.method,
-            "path": request.url.path,
-        },
-    )
+    content = {
+        "success": False,
+        "status_code": exc.status_code,
+        "error": "Lỗi yêu cầu",
+        "message": exc.detail,
+        "method": request.method,
+        "path": request.url.path,
+    }
+    if exc.status_code == status.HTTP_404_NOT_FOUND:
+        content["timestamp"] = datetime.now(timezone.utc).isoformat()
+    return JSONResponse(status_code=exc.status_code, content=content)
