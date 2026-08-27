@@ -1,7 +1,9 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
+from sqlalchemy.orm import Session
 
 from app.core.exception import http_exception_handler
-from app.db.database import Base, engine
+from app.db.database import Base, engine, get_db
+from app.models.user import User
 from app.routers import auth, club as club_router, users
 from app.routers.activity import activity_router, club_activity_router
 
@@ -26,8 +28,9 @@ app.include_router(activity_router)
     tags=["system"],
     summary="Kiểm tra trạng thái API",
 )
-def health_check():
+def health_check(db: Session = Depends(get_db)):
     return {
         "status": "hoạt động",
         "message": "API đang chạy",
+        "total_users": db.query(User).count(),
     }
