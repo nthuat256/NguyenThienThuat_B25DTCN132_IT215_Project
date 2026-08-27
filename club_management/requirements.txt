@@ -3,7 +3,7 @@ uvicorn
 sqlalchemy
 pymysql
 python-dotenv
-passlib[bcrypt]
+bcrypt
 PyJWT
 python-multipart
 email-validator

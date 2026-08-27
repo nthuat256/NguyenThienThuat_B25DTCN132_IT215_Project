@@ -73,7 +73,11 @@ def validate_assignee(club_id: int, assignee_id: int | None, db: Session) -> Non
         raise ActivityAssigneeNotMemberException()
 
 
-def check_update_permission(activity: ClubActivity, current_user: User, db: Session) -> ClubMember:
+def check_update_permission(
+    activity: ClubActivity,
+    current_user: User,
+    db: Session,
+) -> ClubMember:
     member = get_membership(activity.club_id, current_user.id, db)
     if member.role == "OWNER" or activity.assignee_id == current_user.id:
         return member
@@ -85,7 +89,6 @@ def check_update_permission(activity: ClubActivity, current_user: User, db: Sess
     response_model=ActivityResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Tạo hoạt động câu lạc bộ",
-    description="Thành viên của câu lạc bộ có thể tạo activity và chỉ được giao cho thành viên trong cùng câu lạc bộ.",
 )
 def create_activity(
     club_id: int,
@@ -108,17 +111,16 @@ def create_activity(
     "",
     response_model=list[ActivityResponse],
     summary="Danh sách hoạt động",
-    description="Danh sách activity của câu lạc bộ, hỗ trợ search, filter, pagination và sort.",
 )
 def get_activities(
     club_id: int,
-    search: str | None = Query(None, description="Tìm theo title"),
+    search: str | None = Query(None, min_length=1, max_length=255),
     status: ActivityStatus | None = Query(None),
     priority: ActivityPriority | None = Query(None),
     assignee_id: int | None = Query(None, ge=1),
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
-    sort_by: str = Query("created_at", pattern="^(created_at|due_date)$"),
+    sort_by: str = Query("created_at", pattern="^(created_at|due_date|title)$"),
     sort_order: str = Query("desc", pattern="^(asc|desc)$"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -137,7 +139,12 @@ def get_activities(
     if assignee_id is not None:
         query = query.filter(ClubActivity.assignee_id == assignee_id)
 
-    sort_column = ClubActivity.created_at if sort_by == "created_at" else ClubActivity.due_date
+    sort_column = {
+        "created_at": ClubActivity.created_at,
+        "due_date": ClubActivity.due_date,
+        "title": ClubActivity.title,
+    }[sort_by]
+
     query = query.order_by(
         sort_column.asc() if sort_order == "asc" else sort_column.desc()
     )
@@ -149,7 +156,6 @@ def get_activities(
     "/{activity_id}",
     response_model=ActivityResponse,
     summary="Xem chi tiết hoạt động",
-    description="Chỉ thành viên của câu lạc bộ chứa activity mới được xem.",
 )
 def get_activity_by_id(
     activity_id: int,
@@ -166,7 +172,6 @@ def get_activity_by_id(
     "/{activity_id}",
     response_model=ActivityResponse,
     summary="Cập nhật hoạt động",
-    description="OWNER hoặc ASSIGNEE được cập nhật activity. ASSIGNEE không được tự thay đổi người được giao.",
 )
 def update_activity(
     activity_id: int,
@@ -179,6 +184,9 @@ def update_activity(
     member = check_update_permission(activity, current_user, db)
 
     data = activity_data.model_dump(exclude_unset=True)
+
+    if not data:
+        return activity
 
     if member.role != "OWNER" and "assignee_id" in data:
         raise ActivityPermissionException("thay đổi assignee của")
@@ -198,7 +206,6 @@ def update_activity(
     "/{activity_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Xóa hoạt động",
-    description="Chỉ OWNER của câu lạc bộ được xóa activity.",
 )
 def delete_activity(
     activity_id: int,

@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
+from app.core.exception import ActivityPermissionException
 
 from app.core.exception import (
     ClubMemberRequiredException,
@@ -178,9 +179,18 @@ def get_members(
     current_user: User = Depends(get_current_user),
 ):
     club = get_club(club_id, db)
-    if not db.query(ClubMember).filter(
-        ClubMember.club_id == club_id,
-        ClubMember.user_id == current_user.id,
-    ).first():
+    member = (
+        db.query(ClubMember)
+        .filter(
+            ClubMember.club_id == club_id,
+            ClubMember.user_id == current_user.id,
+        )
+        .first()
+    )
+    if not member:
         raise ClubMemberRequiredException()
-    return db.query(ClubMember).filter(ClubMember.club_id == club.id).all()
+    return (
+        db.query(ClubMember)
+        .filter(ClubMember.club_id == club.id)
+        .all()
+    )
