@@ -1,6 +1,8 @@
+from datetime import datetime
 
-from sqlalchemy import Boolean, Column, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, Integer, String
 from sqlalchemy.orm import relationship
+
 from app.db.database import Base
 
 
@@ -13,6 +15,7 @@ class User(Base):
     full_name = Column(String(255), nullable=False)
     role = Column(String(20), default="USER", nullable=False, index=True)
     is_active = Column(Boolean, default=True, nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     clubs_owned = relationship("Club", back_populates="owner")
     memberships = relationship("ClubMember", back_populates="user", cascade="all, delete-orphan")
